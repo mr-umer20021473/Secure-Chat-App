@@ -13,3 +13,27 @@ from flask_login import (
 from werkzeug.security import generate_password_hash, check_password_hash
 from cryptography.hazmat.primitives.asymmetric import x25519
 
+from models import db, User, Conversation, Participant, Message
+from flask_cors import CORS
+import random
+import smtplib
+from email.message import EmailMessage
+from models import (
+    db, User, Conversation, Participant, Message, QueuedMessage, OTPRequest
+)
+from datetime import timezone
+from flask import jsonify
+
+app = Flask(__name__)
+CORS(app, supports_credentials=True)
+socketio = SocketIO(app, cors_allowed_origins="*")
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-key")
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///chat.db"
+GMAIL_USER = ""
+GMAIL_PASS = "bguxmclomckfmdeg"
+
+db.init_app(app)
+login_manager = LoginManager(app); login_manager.login_view = "api_login"
+
+with app.app_context():
+    db.create_all()

@@ -37,3 +37,47 @@ login_manager = LoginManager(app); login_manager.login_view = "api_login"
 
 with app.app_context():
     db.create_all()
+
+
+# ──────────────────────────────────────────────────────────────
+# in-memory key stores
+user_priv, peer_pub, sessions = {}, {}, {}
+# ──────────────────────────────────────────────────────────────
+@login_manager.user_loader
+def load_user(uid): return db.session.get(User, int(uid))
+
+
+@app.route("/api/users")
+@login_required
+def api_users():
+    users = User.query.filter(User.id != current_user.id).all()
+    return jsonify([
+        {"id": u.id, "username": u.username}
+        for u in users
+    ])
+
+@app.route("/api/register", methods=["POST"])
+def api_register():
+    data = request.json or {}
+    username = data.get("username", "").strip()
+    password = data.get("password", "")
+    email    = data.get("email", "").strip().lower()
+
+    # field validation
+    if not username or not password or not email:
+        return jsonify({"success": False, "error": "Username, email and password are required."}), 400
+
+    # check for existing username or email
+    if User.query.filter_by(username=username).first():
+        return jsonify({"success": False, "error": "Username already taken."}), 400
+    if User.query.filter_by(email=email).first():
+        return jsonify({"success": False, "error": "Email already registered."}), 400
+
+    # create user
+    hashed = generate_password_hash(password)
+    user = User(username=username, email=email, password=hashed)
+    db.session.add(user)
+    db.session.commit()
+
+    return jsonify({"success": True})
+

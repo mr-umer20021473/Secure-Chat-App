@@ -81,3 +81,13 @@ def api_register():
 
     return jsonify({"success": True})
 
+def send_otp_email(address: str, code: str):
+    msg = EmailMessage()
+    msg["Subject"] = "Your SecureChat login code"
+    msg["From"]    = GMAIL_USER
+    msg["To"]      = address
+    msg.set_content(f"Your one-time login code is: {code}\nIt expires in 5 minutes.")
+    with smtplib.SMTP("smtp.gmail.com", 587) as smtp:
+        smtp.starttls()
+        smtp.login(GMAIL_USER, GMAIL_PASS)
+        smtp.send_message(msg)

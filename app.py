@@ -91,3 +91,26 @@ def send_otp_email(address: str, code: str):
         smtp.starttls()
         smtp.login(GMAIL_USER, GMAIL_PASS)
         smtp.send_message(msg)
+
+@app.route("/api/login", methods=["POST"])
+def api_login():
+    data = request.json or {}
+    username = data.get("username", "").strip()
+    pwd      = data.get("password", "")
+    user = User.query.filter_by(username=username).first()
+    if not user or not check_password_hash(user.password, pwd):
+        return jsonify(success=False, error="Invalid credentials."), 401
+
+    # generate and persist OTP
+    code = f"{random.randint(0,999999):06d}"
+    otp = OTPRequest(user_id=user.id, code=code)
+    db.session.add(otp)
+    db.session.commit()
+
+    try:
+        send_otp_email(user.email, code)
+    except Exception as e:
+        app.logger.exception("OTP email failed")
+        return jsonify(success=False, error="Failed to send email."), 500
+
+    return jsonify(success=True, otp_sent=True)

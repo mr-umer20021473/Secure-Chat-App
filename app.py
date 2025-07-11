@@ -113,7 +113,8 @@ def api_login():
         app.logger.exception("OTP email failed")
         return jsonify(success=False, error="Failed to send email."), 500
 
-    return jsonify(success=True, otp_sent=True)  
+    return jsonify(success=True, otp_sent=True)
+  
 @app.route("/api/verify_otp", methods=["POST"])
 def api_verify_otp():
     data = request.json or {}
@@ -146,3 +147,11 @@ def api_verify_otp():
     peer_pub[user.username] = {}
 
     return jsonify(success=True, username=user.username)
+
+@app.route("/api/logout", methods=["POST"])
+@login_required
+def api_logout():
+    user_priv.pop(current_user.username, None)
+    peer_pub.pop(current_user.username, None)
+    logout_user()
+    return jsonify({"success": True})

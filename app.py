@@ -131,3 +131,18 @@ def api_verify_otp():
         .order_by(OTPRequest.created_at.desc())
         .first()
     )
+    if (not otp) or otp.code != submitted or otp.is_expired():
+        return jsonify(success=False, error="Invalid or expired code"), 400
+
+    # mark it used
+    otp.used = True
+    db.session.commit()
+
+    
+    login_user(user)
+    # regenerate X25519 private key on each fresh session
+    priv = x25519.X25519PrivateKey.generate()
+    user_priv[user.username] = priv
+    peer_pub[user.username] = {}
+
+    return jsonify(success=True, username=user.username)

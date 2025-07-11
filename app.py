@@ -113,4 +113,21 @@ def api_login():
         app.logger.exception("OTP email failed")
         return jsonify(success=False, error="Failed to send email."), 500
 
-    return jsonify(success=True, otp_sent=True)
+    return jsonify(success=True, otp_sent=True)  
+@app.route("/api/verify_otp", methods=["POST"])
+def api_verify_otp():
+    data = request.json or {}
+    username = data.get("username", "").strip()
+    submitted = data.get("otp", "").strip()
+
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify(success=False, error="Unknown user"), 404
+
+    # find most recent unused OTP for this user
+    otp = (
+      OTPRequest.query
+        .filter_by(user_id=user.id, used=False)
+        .order_by(OTPRequest.created_at.desc())
+        .first()
+    )

@@ -155,3 +155,13 @@ def api_logout():
     peer_pub.pop(current_user.username, None)
     logout_user()
     return jsonify({"success": True})
+
+@app.route("/api/conversations/<int:conv_id>/messages")
+@login_required
+def api_history(conv_id):
+    rows = (
+        Message.query
+               .filter_by(conversation_id=conv_id)
+               .order_by(Message.timestamp)
+               .all()
+    )

@@ -165,3 +165,12 @@ def api_history(conv_id):
                .order_by(Message.timestamp)
                .all()
     )
+    out = []
+    for m in rows:
+        # decrypt the stored JSON packet
+        packet = json.loads(base64.b64decode(m.body))
+        # attach an ISO timestamp
+        packet["timestamp"] = m.timestamp.replace(tzinfo=timezone.utc) \
+                                         .isoformat()
+        out.append(packet)
+    return jsonify(out)

@@ -174,3 +174,32 @@ def api_history(conv_id):
                                          .isoformat()
         out.append(packet)
     return jsonify(out)
+
+# ---------- chat page ----------
+@app.route("/chat/<username>")
+@login_required
+def chat(username):
+    other = User.query.filter_by(username=username).first_or_404()
+    conv = (
+        Conversation.query.join(Participant)
+        .filter(Participant.user_id.in_([current_user.id, other.id]))
+        .group_by(Conversation.id)
+        .having(func.count(Participant.id) == 2).first())
+    if not conv:
+        conv = Conversation(); db.session.add(conv); db.session.commit()
+        db.session.add_all([
+            Participant(conversation_id=conv.id, user_id=current_user.id),
+            Participant(conversation_id=conv.id, user_id=other.id)])
+        db.session.commit()
+
+    msgs = (Message.query.filter_by(conversation_id=conv.id)
+                         .order_by(Message.timestamp).all())
+    history = [{"sender": db.session.get(User, m.sender_id).username,
+                "body":   m.body,         # encrypted blob
+                "timestamp": m.timestamp.strftime("%Y-%m-%d %H:%M")}
+               for m in msgs]
+    return render_template("chat.html",
+                           from_user=current_user.username,
+                           to_user=other.username,
+                           history=history,
+                           conv_id=conv.id)

@@ -237,3 +237,14 @@ def on_join(data):
             # swallow one bad packet
             app.logger.exception("Failed to replay queued msg %s", qm.id)
     db.session.commit()
+
+@socketio.on("exchange_keys")
+@login_required
+def exchange_keys(msg):
+    me, peer = current_user.username, msg.get("to")
+    if not peer or "pub_key" not in msg:
+        return
+    # (you may store peer pub if you need it server-side)
+    emit("peer_key",
+         {"from": me, "pub_key": msg["pub_key"]},
+         room=peer)

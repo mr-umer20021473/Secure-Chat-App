@@ -248,3 +248,36 @@ def exchange_keys(msg):
     emit("peer_key",
          {"from": me, "pub_key": msg["pub_key"]},
          room=peer)
+    
+@socketio.on("secure_message")
+@login_required
+def secure_message(msg):
+    me, peer = current_user.username, msg["to"]
+    full = dict(msg, **{"from": me})
+
+    # 1) Persist into permanent chat history (optional)
+    db.session.add(
+      Message(conversation_id=msg["conv_id"],
+              sender_id=current_user.id,
+              body=base64.b64encode(
+                json.dumps(full).encode()
+              ).decode())
+    )
+
+    # 2) Queue for offline delivery
+    peer_user = User.query.filter_by(username=peer).first()
+    if peer_user:
+        qm = QueuedMessage(
+          conversation_id=msg["conv_id"],
+          recipient_id=peer_user.id,
+          payload=json.dumps(full)
+        )
+        db.session.add(qm)
+
+    db.session.commit()
+
+    # 3) Forward immediately if online
+    emit("secure_message_client", full, room=peer)
+    # 4) Ack back to sender
+    emit("sent_ack", {"seq": msg["seq"]}, room=request.sid)
+# ─────────────────────────────────────────────

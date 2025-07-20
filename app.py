@@ -203,3 +203,37 @@ def chat(username):
                            to_user=other.username,
                            history=history,
                            conv_id=conv.id)
+
+# ───────────────── Socket.IO ─────────────────
+@socketio.on("connect")
+def handle_connect():
+    """Place each authenticated socket in a room named
+       after the user so we can emit(room=username)."""
+    if current_user.is_authenticated:
+        join_room(current_user.username)
+
+
+@socketio.on("join_room")
+@login_required
+def on_join(data):
+    conv_id = data.get("conv_id")
+    join_room(current_user.username)
+
+    # Replay any queued messages for this conv / this user
+    pending = (
+      QueuedMessage.query
+        .filter_by(recipient_id=current_user.id,
+                   conversation_id=conv_id,
+                   delivered=False)
+        .all()
+    )
+    for qm in pending:
+        try:
+            packet = json.loads(qm.payload)
+            emit("secure_message_client", packet,
+                 room=current_user.username)
+            qm.delivered = True
+        except Exception:
+            # swallow one bad packet
+            app.logger.exception("Failed to replay queued msg %s", qm.id)
+    db.session.commit()

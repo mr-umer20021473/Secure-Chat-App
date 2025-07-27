@@ -1,0 +1,69 @@
+/* src/Login.css */
+
+.login-container {
+  width: 100vw;
+  height: 100vh;
+  background: #ece5dd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  font-family: sans-serif;
+}
+
+.login-card {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #075e54;
+  font-size: 1.75rem;
+}
+
+.login-form-group {
+  margin-bottom: 1rem;
+}
+
+.login-form-group input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.login-button {
+  width: 100%;
+  padding: 0.75rem;
+  background: #128c7e;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.login-button:disabled {
+  background: #94d3c2;
+  cursor: not-allowed;
+}
+
+.login-button:not(:disabled):hover {
+  background: #0f7a68;
+}
+
+.login-error {
+  margin-top: 1rem;
+  color: #e53935;
+  text-align: center;
+  font-size: 0.9rem;
+}

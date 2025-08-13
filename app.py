@@ -12,7 +12,6 @@ from flask_login import (
     login_required, current_user)
 from werkzeug.security import generate_password_hash, check_password_hash
 from cryptography.hazmat.primitives.asymmetric import x25519
-
 from models import db, User, Conversation, Participant, Message
 from flask_cors import CORS
 import random
@@ -38,7 +37,6 @@ login_manager = LoginManager(app); login_manager.login_view = "api_login"
 with app.app_context():
     db.create_all()
 
-
 # ──────────────────────────────────────────────────────────────
 # in-memory key stores
 user_priv, peer_pub, sessions = {}, {}, {}
@@ -63,7 +61,7 @@ def api_register():
     password = data.get("password", "")
     email    = data.get("email", "").strip().lower()
 
-    # field validation
+    # basic field validation
     if not username or not password or not email:
         return jsonify({"success": False, "error": "Username, email and password are required."}), 400
 
@@ -73,13 +71,20 @@ def api_register():
     if User.query.filter_by(email=email).first():
         return jsonify({"success": False, "error": "Email already registered."}), 400
 
-    # create user
+    # everything looks good → create user
     hashed = generate_password_hash(password)
     user = User(username=username, email=email, password=hashed)
     db.session.add(user)
     db.session.commit()
 
+  
+
     return jsonify({"success": True})
+
+
+
+
+
 
 def send_otp_email(address: str, code: str):
     msg = EmailMessage()
@@ -91,6 +96,10 @@ def send_otp_email(address: str, code: str):
         smtp.starttls()
         smtp.login(GMAIL_USER, GMAIL_PASS)
         smtp.send_message(msg)
+
+
+
+
 
 @app.route("/api/login", methods=["POST"])
 def api_login():
@@ -114,7 +123,8 @@ def api_login():
         return jsonify(success=False, error="Failed to send email."), 500
 
     return jsonify(success=True, otp_sent=True)
-  
+
+
 @app.route("/api/verify_otp", methods=["POST"])
 def api_verify_otp():
     data = request.json or {}
@@ -139,15 +149,19 @@ def api_verify_otp():
     otp.used = True
     db.session.commit()
 
-    
+    # finally log them in
     login_user(user)
-    # regenerate X25519 private key on each fresh session
+    # regenerate your X25519 private key on each fresh session
     priv = x25519.X25519PrivateKey.generate()
     user_priv[user.username] = priv
     peer_pub[user.username] = {}
 
     return jsonify(success=True, username=user.username)
 
+
+
+
+ 
 @app.route("/api/logout", methods=["POST"])
 @login_required
 def api_logout():
@@ -155,6 +169,8 @@ def api_logout():
     peer_pub.pop(current_user.username, None)
     logout_user()
     return jsonify({"success": True})
+
+
 
 @app.route("/api/conversations/<int:conv_id>/messages")
 @login_required
@@ -174,6 +190,7 @@ def api_history(conv_id):
                                          .isoformat()
         out.append(packet)
     return jsonify(out)
+
 
 # ---------- chat page ----------
 @app.route("/chat/<username>")
@@ -238,6 +255,11 @@ def on_join(data):
             app.logger.exception("Failed to replay queued msg %s", qm.id)
     db.session.commit()
 
+
+
+
+
+
 @socketio.on("exchange_keys")
 @login_required
 def exchange_keys(msg):
@@ -249,6 +271,9 @@ def exchange_keys(msg):
          {"from": me, "pub_key": msg["pub_key"]},
          room=peer)
     
+
+
+
 @socketio.on("secure_message")
 @login_required
 def secure_message(msg):
@@ -281,6 +306,5 @@ def secure_message(msg):
     # 4) Ack back to sender
     emit("sent_ack", {"seq": msg["seq"]}, room=request.sid)
 # ─────────────────────────────────────────────
-
 if __name__ == "__main__":
     socketio.run(app, host="0.0.0.0", port=5000, debug=True)

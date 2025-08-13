@@ -29,8 +29,8 @@ CORS(app, supports_credentials=True)
 socketio = SocketIO(app, cors_allowed_origins="*")
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-key")
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///chat.db"
-GMAIL_USER = ""
-GMAIL_PASS = "bguxmclomckfmdeg"
+GMAIL_USER = "mr.umer003@gmail.com"
+GMAIL_PASS = "ztsvsygyalarxmgg"
 
 db.init_app(app)
 login_manager = LoginManager(app); login_manager.login_view = "api_login"

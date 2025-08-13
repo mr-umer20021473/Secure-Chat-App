@@ -3,6 +3,8 @@ Secure Chat App For Chat App Developed in Python Flask
 
 Register Route Url/register
 
+# At First chat both users needed to be online
+
 # 🔐 Secure Chat Application
 
 A **full-stack secure chat application** built with **Python Flask** (backend) and **React.js** (frontend).  
